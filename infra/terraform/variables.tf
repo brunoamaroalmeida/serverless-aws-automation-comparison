@@ -10,11 +10,21 @@ variable "website_bucket_name" {
   default = "hello.devopssquad.com"
 }
 
-variable "website_bucket_name_log" {
+variable "deployed_at" {}
+
+variable domain {
   default = "hello.devopssquad.com"
 }
-variable "website_bucket_name_log_prefix" {
-  default = "logs"
+
+variable api_domain{
+  default = "api.devopssquad.com"
 }
 
-variable "deployed_at" {}
+variable regional_acm_arm{
+  default = "arn:aws:acm:eu-west-1:831363121910:certificate/642953bd-7ac9-4249-b5e2-249ceb571e2c"
+}
+
+
+variable "parent_zone_name" {
+  default = "devopssquad.com"
+}

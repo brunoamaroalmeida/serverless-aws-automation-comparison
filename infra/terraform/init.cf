@@ -3,4 +3,13 @@ provider "aws" {
   profile = "${var.aws_profile}"
 }
 
+# aws --region eu-west-1 s3 mb s3://jenkins-aws-fargate-pipeline
+terraform {
+  backend "s3" {
+    bucket = "serverless-aws-automation-comparison"
+    key = "terraform-state"
+    region = "eu-west-1"
+  }
+}
+
 data "aws_caller_identity" "current" {}
