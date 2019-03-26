@@ -153,7 +153,7 @@ resource "aws_iam_policy" "policy" {
       "Action": [
         "s3:Put*"
       ],
-      "Resource": "arn:aws:s3:::${var.website_bucket_name}/results/*"
+      "Resource": "arn:aws:s3:::${var.results_bucket_name}/*"
     }
     ]
 }

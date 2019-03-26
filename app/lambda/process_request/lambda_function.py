@@ -17,7 +17,7 @@ def lambda_handler(event, context):
     # Save the file in S3
     s3 = boto3.client('s3')
     try:
-        s3.upload_file(file,"hello.devopssquad.com", "results/"+filename)
+        s3.upload_file(file,"devopssquad-results", filename)
     except Exception as e:
         print(e)
         raise e

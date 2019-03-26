@@ -26,6 +26,10 @@ resource "aws_s3_bucket" "website_bucket" {
    }
 }
 
+resource "aws_s3_bucket" "results_bucket" {
+  bucket   = "${var.results_bucket_name}"
+}
+
 data "aws_route53_zone" "default" {
   name    = "${var.parent_zone_name}"
 }

@@ -1,0 +1,68 @@
+Parameters:
+  RDomainName:
+    Description: Root domain zone
+    Type: String
+    Default: devopssquad.com
+  DomainName:
+    Description: Domain name for your website (example.com)
+    Type: String
+    Default: hello.devopssquad.com
+  ResultsBucket:
+    Description: S3 Bucket to store the Results
+    Type: String
+    Default: devopssquad-results
+Resources:
+  ResultStorageBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref ResultsBucket
+  WWWBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref DomainName
+      AccessControl: PublicRead
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: 404.html
+  WWWBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref DomainName
+      PolicyDocument:
+        Statement:
+          -
+            Action:
+              - "s3:GetObject"
+            Effect: "Allow"
+            Resource:
+              Fn::Join:
+                - ""
+                -
+                  - "arn:aws:s3:::"
+                  -
+                    Ref: "DomainName"
+                  - "/*"
+            Principal: "*"
+
+  WWWDNS:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneName: !Sub
+          - ${Domain}.
+          - Domain: !Ref RDomainName
+      Comment: Zone apex alias.
+      RecordSets:
+      -
+        Name: !Sub
+            - ${Domain}
+            - Domain: !Ref DomainName
+        Type: CNAME
+        TTL: 900
+        ResourceRecords:
+        - Fn::Sub:
+          - "${Domain}.s3-website-eu-west-1.amazonaws.com"
+          - Domain: !Ref DomainName
+Outputs:
+  WebsiteURL:
+    Value: !GetAtt WWWBucket.WebsiteURL
+    Description: URL for website hosted on S3

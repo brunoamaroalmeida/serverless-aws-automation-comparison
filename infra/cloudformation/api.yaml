@@ -1,0 +1,192 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  RDomainName:
+    Description: Root domain zone
+    Type: String
+    Default: devopssquad.com
+  DomainName:
+    Description: Domain name for your api
+    Type: String
+    Default: api.devopssquad.com
+  LambdaCodeBucket:
+    Description: Name of the S3 bucket that's storing the Lamba function's zip file
+    Type: String
+    Default: serverless-aws-automation-comparison
+  LambdaCodePath:
+    Description: Path to the zip file of code for the Lambda function
+    Type: String
+    Default: process_request.zip
+  ResultsBucket:
+    Description: S3 Bucket to store the Results
+    Type: String
+    Default: devopssquad-results
+  StageName:
+    Description: API Gateway Stage Name
+    Type: String
+    Default: dev
+  Certificate:
+    Description: API Certificate ARN
+    Type: String
+    Default: arn:aws:acm:eu-west-1:831363121910:certificate/642953bd-7ac9-4249-b5e2-249ceb571e2c
+Resources:
+  ApiLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+      - PolicyName:
+          Fn::Join:
+          - "-"
+          - - Ref: AWS::StackName
+            - LambdaAPI
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - s3:Put*
+            Resource:
+              Fn::Join:
+                - ""
+                -
+                  - "arn:aws:s3:::"
+                  -
+                    Ref: "ResultsBucket"
+                  - "/*"
+  ApiLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt ApiLambdaExecutionRole.Arn
+      Runtime: python3.7
+      Code:
+        S3Bucket:
+          Ref: LambdaCodeBucket
+        S3Key:
+          Ref: LambdaCodePath
+
+### API Gateway
+  Api:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Sub ${AWS::StackName}-Api
+
+  ApiResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt Api.RootResourceId
+      PathPart: api
+      RestApiId: !Ref Api
+
+  ApiMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref Api
+      ResourceId: !Ref ApiResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiLambda.Arn}/invocations
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'OPTIONS,POST'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+      MethodResponses:
+        - StatusCode: 200
+          ResponseModels:
+            application/json: Empty
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+            method.response.header.Access-Control-Allow-Origin: false
+
+  ApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - ApiMethod
+    Properties:
+      RestApiId: !Ref Api
+
+  ApiStage:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      RestApiId: !Ref Api
+      DeploymentId: !Ref ApiDeployment
+      StageName: !Ref StageName
+
+  ApiGatewayPermissionExecuteLambda:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt ApiLambda.Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${Api}/*/*
+
+  ApiOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref Api
+      ResourceId: !Ref ApiResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        IntegrationResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+            method.response.header.Access-Control-Allow-Methods: "'OPTIONS,POST'"
+            method.response.header.Access-Control-Allow-Origin: "'*'"
+          ResponseTemplates:
+            application/json: ''
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+        Type: MOCK
+      MethodResponses:
+      - StatusCode: 200
+        ResponseModels:
+          application/json: Empty
+        ResponseParameters:
+          method.response.header.Access-Control-Allow-Headers: false
+          method.response.header.Access-Control-Allow-Methods: false
+          method.response.header.Access-Control-Allow-Origin: false
+####
+  CustomDomainName:
+    Type: 'AWS::ApiGateway::DomainName'
+    Properties:
+      CertificateArn: !Ref Certificate
+      DomainName: !Ref DomainName
+
+  Mapping:
+    Type: 'AWS::ApiGateway::BasePathMapping'
+    Properties:
+      DomainName: !Ref CustomDomainName
+      RestApiId: !Ref Api
+
+### DNS
+  APIDNS:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      AliasTarget:
+        DNSName:
+          Fn::GetAtt:
+          - CustomDomainName
+          - distributionDomainName
+      #  HostedZoneId:
+      HostedZoneName: !Sub
+          - ${Domain}.
+          - Domain: !Ref RDomainName
+      Name: !Sub
+          - ${Domain}
+          - Domain: !Ref DomainName
+      Type: A
