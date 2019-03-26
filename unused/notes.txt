@@ -1,3 +1,29 @@
 
 export AWS_DEFAULT_REGION="eu-west-1"
 export TF_VAR_deployed_at=$(date +%s)
+
+
+
+  Mapping:
+    Type: 'AWS::ApiGateway::BasePathMapping'
+    Properties:
+      DomainName: !Ref CustomDomainName
+      RestApiId: !Ref Api
+
+### DNS
+  APIDNS:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      AliasTarget:
+        DNSName:
+          Fn::GetAtt:
+          - CustomDomainName
+          - RegionalDomainName
+      #  HostedZoneId:
+      HostedZoneName: !Sub
+          - ${Domain}.
+          - Domain: !Ref RDomainName
+      Name: !Sub
+          - ${Domain}
+          - Domain: !Ref DomainName
+      Type: A

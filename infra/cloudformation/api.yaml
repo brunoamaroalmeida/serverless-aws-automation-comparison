@@ -76,6 +76,8 @@ Resources:
     Type: AWS::ApiGateway::RestApi
     Properties:
       Name: !Sub ${AWS::StackName}-Api
+      Parameters:
+          endpointConfigurationTypes: REGIONAL
 
   ApiResource:
     Type: AWS::ApiGateway::Resource
@@ -161,32 +163,8 @@ Resources:
           method.response.header.Access-Control-Allow-Methods: false
           method.response.header.Access-Control-Allow-Origin: false
 ####
-  CustomDomainName:
-    Type: 'AWS::ApiGateway::DomainName'
-    Properties:
-      CertificateArn: !Ref Certificate
-      DomainName: !Ref DomainName
-
-  Mapping:
-    Type: 'AWS::ApiGateway::BasePathMapping'
-    Properties:
-      DomainName: !Ref CustomDomainName
-      RestApiId: !Ref Api
-
-### DNS
-  APIDNS:
-    Type: AWS::Route53::RecordSetGroup
-    Properties:
-      AliasTarget:
-        DNSName:
-          Fn::GetAtt:
-          - CustomDomainName
-          - distributionDomainName
-      #  HostedZoneId:
-      HostedZoneName: !Sub
-          - ${Domain}.
-          - Domain: !Ref RDomainName
-      Name: !Sub
-          - ${Domain}
-          - Domain: !Ref DomainName
-      Type: A
+#  CustomDomainName:
+#    Type: 'AWS::ApiGateway::DomainName'
+#    Properties:
+#      DomainName: !Ref DomainName
+#      RegionalCertificateArn: !Ref Certificate
