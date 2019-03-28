@@ -4,7 +4,7 @@ A Comparison between different deployment automation tools for an AWS Serverless
 
 ## Architecture
 
-![Alt text](Architecture_Serverless_App.png?raw=true "Architecture")
+![Architecture](docs/Architecture_Serverless_App.png?raw=true "Architecture")
 
 
 ## Athena (Optional)
