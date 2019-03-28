@@ -1,0 +1,239 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'MyApp SAM Template for MyApp
+
+  '
+Globals:
+  Api:
+    Cors: '''*'''
+    EndpointConfiguration: REGIONAL
+  Function:
+    Timeout: 3
+Outputs:
+  MyAppFunction:
+    Description: MyApp Lambda Function ARN
+    Value:
+      Fn::GetAtt:
+      - MyAppFunction
+      - Arn
+  MyAppFunctionIamRole:
+    Description: Implicit IAM Role created for MyApp function
+    Value:
+      Fn::GetAtt:
+      - MyAppFunctionRole
+      - Arn
+Parameters:
+  Certificate:
+    Default: arn:aws:acm:eu-west-1:831363121910:certificate/642953bd-7ac9-4249-b5e2-249ceb571e2c
+    Description: API Certificate ARN
+    Type: String
+  DomainName:
+    Default: api.devopssquad.com
+    Description: Domain name for your api
+    Type: String
+  LambdaCodeBucket:
+    Default: serverless-aws-automation-comparison
+    Description: Name of the S3 bucket that's storing the Lamba function's zip file
+    Type: String
+  LambdaCodePath:
+    Default: process_request.zip
+    Description: Path to the zip file of code for the Lambda function
+    Type: String
+  RDomainName:
+    Default: devopssquad.com
+    Description: Root domain zone
+    Type: String
+  ResultsBucket:
+    Default: devopssquad-results
+    Description: S3 Bucket to store the Results
+    Type: String
+  StageName:
+    Default: dev
+    Description: API Gateway Stage Name
+    Type: String
+Resources:
+  APIDNS:
+    Properties:
+      HostedZoneName:
+        Fn::Sub:
+        - ${Domain}.
+        - Domain:
+            Ref: RDomainName
+      RecordSets:
+      - AliasTarget:
+          DNSName:
+            Fn::GetAtt:
+            - CustomDomainName
+            - RegionalDomainName
+          HostedZoneId:
+            Fn::GetAtt:
+            - CustomDomainName
+            - RegionalHostedZoneId
+        Name:
+          Fn::Sub:
+          - ${Domain}
+          - Domain:
+              Ref: DomainName
+        Type: A
+    Type: AWS::Route53::RecordSetGroup
+  ApiKey:
+    DependsOn:
+    - MyAppRestApi
+    - MyAppFunction
+    - MyAppRestApiStage
+    Properties:
+      Description: CloudFormation API Key V1
+      Enabled: 'true'
+      Name: ApiKey
+      StageKeys:
+      - RestApiId:
+          Ref: MyAppRestApi
+        StageName:
+          Ref: StageName
+      Value: thisismyapikeythisismyapikeythisismyapikey
+    Type: AWS::ApiGateway::ApiKey
+  ApiUsagePlan:
+    DependsOn:
+    - MyAppRestApi
+    - MyAppFunction
+    - MyAppRestApiStage
+    Properties:
+      ApiStages:
+      - ApiId:
+          Ref: MyAppRestApi
+        Stage:
+          Ref: StageName
+      Description: API Usage plan
+      Quota:
+        Limit: 10000
+        Period: DAY
+      Throttle:
+        BurstLimit: 500
+        RateLimit: 1000
+      UsagePlanName: process-request-usage-plan
+    Type: AWS::ApiGateway::UsagePlan
+  ApiUsagePlanKey:
+    Properties:
+      KeyId:
+        Ref: ApiKey
+      KeyType: API_KEY
+      UsagePlanId:
+        Ref: ApiUsagePlan
+    Type: AWS::ApiGateway::UsagePlanKey
+  CustomDomainName:
+    Properties:
+      DomainName:
+        Ref: DomainName
+      EndpointConfiguration:
+        Types:
+        - REGIONAL
+      RegionalCertificateArn:
+        Ref: Certificate
+    Type: AWS::ApiGateway::DomainName
+  Mapping:
+    DependsOn:
+    - CustomDomainName
+    - MyAppRestApiStage
+    Properties:
+      DomainName:
+        Ref: CustomDomainName
+      RestApiId:
+        Ref: MyAppRestApi
+      Stage:
+        Ref: StageName
+    Type: AWS::ApiGateway::BasePathMapping
+  MyAppFunction:
+    Properties:
+      CodeUri: s3://serverless-aws-automation-comparison/2c298b83273a6e93627d03ce22c5bb24
+      Events:
+        MyApp:
+          Properties:
+            Method: post
+            Path: /api
+            RestApiId:
+              Ref: MyAppRestApi
+          Type: Api
+        StoreResultsEvent:
+          Properties:
+            Bucket:
+              Ref: ResultStorageBucket
+            Events: s3:ObjectCreated:*
+          Type: S3
+      Handler: lambda_function.lambda_handler
+      Policies:
+      - AWSLambdaExecute
+      - Statement:
+        - Action:
+          - s3:Put*
+          Effect: Allow
+          Resource:
+            Fn::Join:
+            - ''
+            - - 'arn:aws:s3:::'
+              - Ref: ResultsBucket
+              - /*
+        Version: '2012-10-17'
+      Runtime: python3.7
+    Type: AWS::Serverless::Function
+  MyAppRestApi:
+    Properties:
+      DefinitionBody:
+        info:
+          title:
+            Ref: AWS::StackName
+        paths:
+          api:
+            options:
+              consumes:
+              - application/json
+              produces:
+              - application/json
+              responses:
+                '200':
+                  description: 200 response
+                  headers:
+                    Access-Control-Allow-Credentials:
+                      type: string
+                    Access-Control-Allow-Headers:
+                      type: string
+                    Access-Control-Allow-Methods:
+                      type: string
+                    Access-Control-Allow-Origin:
+                      type: string
+              x-amazon-apigateway-integration:
+                passthroughBehavior: when_no_match
+                requestTemplates:
+                  application/json: '{statusCode:200}'
+                responses:
+                  default:
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Credentials: '''false'''
+                      method.response.header.Access-Control-Allow-Headers: '''Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'''
+                      method.response.header.Access-Control-Allow-Methods: '''OPTIONS,GET,POST'''
+                      method.response.header.Access-Control-Allow-Origin: '''*'''
+                    statusCode: '200'
+                type: mock
+            post:
+              security:
+              - api_key: []
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                responses: {}
+                type: aws_proxy
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MyAppFunction.Arn}/invocations
+        securityDefinitions:
+          api_key:
+            in: header
+            name: x-api-key
+            type: apiKey
+        swagger: '2.0'
+        x-amazon-apigateway-api-key-source: HEADER
+      StageName:
+        Ref: StageName
+    Type: AWS::Serverless::Api
+  ResultStorageBucket:
+    Properties:
+      BucketName:
+        Ref: ResultsBucket
+    Type: AWS::S3::Bucket
+Transform: AWS::Serverless-2016-10-31

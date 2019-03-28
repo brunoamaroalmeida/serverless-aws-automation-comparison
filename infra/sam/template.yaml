@@ -1,35 +1,226 @@
 AWSTemplateFormatVersion: '2010-09-09'
+
 Transform: AWS::Serverless-2016-10-31
 Description: >
   MyApp
   SAM Template for MyApp
 
+Parameters:
+  RDomainName:
+    Description: Root domain zone
+    Type: String
+    Default: devopssquad.com
+  DomainName:
+    Description: Domain name for your api
+    Type: String
+    Default: api.devopssquad.com
+  LambdaCodeBucket:
+    Description: Name of the S3 bucket that's storing the Lamba function's zip file
+    Type: String
+    Default: serverless-aws-automation-comparison
+  LambdaCodePath:
+    Description: Path to the zip file of code for the Lambda function
+    Type: String
+    Default: process_request.zip
+  ResultsBucket:
+    Description: S3 Bucket to store the Results
+    Type: String
+    Default: devopssquad-results
+  StageName:
+    Description: API Gateway Stage Name
+    Type: String
+    Default: dev
+  Certificate:
+    Description: API Certificate ARN
+    Type: String
+    Default: arn:aws:acm:eu-west-1:831363121910:certificate/642953bd-7ac9-4249-b5e2-249ceb571e2c
+
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
     Timeout: 3
+  Api:
+    EndpointConfiguration: REGIONAL
+    Cors: "'*'"
 
 Resources:
+  MyAppRestApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref StageName
+      DefinitionBody:
+            swagger: "2.0"
+            info:
+              title: !Ref AWS::StackName
+            x-amazon-apigateway-api-key-source : "HEADER"
+            paths:
+              "api":
+                post:
+                  x-amazon-apigateway-integration:
+                    httpMethod: POST
+                    type: aws_proxy
+                    uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${MyAppFunction.Arn}/invocations
+                    responses: {}
+                  security:
+                    - api_key: []
+                options:
+                  consumes:
+                  - "application/json"
+                  produces:
+                  - "application/json"
+                  responses:
+                    '200':
+                      description: "200 response"
+                      headers:
+                        Access-Control-Allow-Origin:
+                          type: "string"
+                        Access-Control-Allow-Methods:
+                          type: "string"
+                        Access-Control-Allow-Credentials:
+                          type: "string"
+                        Access-Control-Allow-Headers:
+                          type: "string"
+                  x-amazon-apigateway-integration:
+                    responses:
+                      default:
+                        statusCode: "200"
+                        responseParameters:
+                          method.response.header.Access-Control-Allow-Credentials: "'false'"
+                          method.response.header.Access-Control-Allow-Methods: "'OPTIONS,GET,POST'"
+                          method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'"
+                          method.response.header.Access-Control-Allow-Origin: "'*'"
+                    passthroughBehavior: "when_no_match"
+                    requestTemplates:
+                      application/json: "{statusCode:200}"
+                    type: "mock"
+            securityDefinitions:
+              api_key:
+                type: "apiKey"
+                name: "x-api-key"
+                in: "header"
+
+
+
   MyAppFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
-      CodeUri: ../../app/lambda/
-      Handler: lambda_handler
+      CodeUri: ../../app/lambda/process_request
+      Handler: lambda_function.lambda_handler
       Runtime: python3.7
+      Policies:
+       - AWSLambdaExecute # Managed Policy
+       - Version: '2012-10-17' # Policy Document
+         Statement:
+           - Effect: Allow
+             Action:
+               - s3:Put*
+             Resource:
+              Fn::Join:
+                - ""
+                -
+                  - "arn:aws:s3:::"
+                  -
+                    Ref: "ResultsBucket"
+                  - "/*"
       Events:
         MyApp:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
             Path: /api
-            Method: get
+            Method: post
+            RestApiId: !Ref MyAppRestApi
+        StoreResultsEvent:
+          Type: S3
+          Properties:
+            Bucket: !Ref ResultStorageBucket
+            Events: s3:ObjectCreated:*
+
+  ResultStorageBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref ResultsBucket
+
+  ApiKey:
+    Type: AWS::ApiGateway::ApiKey
+    DependsOn:
+      - "MyAppRestApi"
+      - "MyAppFunction"
+      - "MyAppRestApiStage"
+    Properties:
+      Name: "ApiKey"
+      Description: "CloudFormation API Key V1"
+      Enabled: "true"
+      Value: "thisismyapikeythisismyapikeythisismyapikey"
+      StageKeys:
+        - RestApiId: !Ref MyAppRestApi
+          StageName: !Ref StageName
+
+  ApiUsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    DependsOn:
+      - "MyAppRestApi"
+      - "MyAppFunction"
+      - "MyAppRestApiStage"
+    Properties:
+      ApiStages:
+      - ApiId: !Ref MyAppRestApi
+        Stage: !Ref StageName
+      Description: API Usage plan
+      Quota:
+        Limit: 10000
+        Period: DAY
+      Throttle:
+        BurstLimit: 500
+        RateLimit: 1000
+      UsagePlanName: process-request-usage-plan
+
+  ApiUsagePlanKey:
+    Type: AWS::ApiGateway::UsagePlanKey
+    Properties :
+      KeyId: !Ref ApiKey
+      KeyType: API_KEY
+      UsagePlanId: !Ref ApiUsagePlan
+
+  CustomDomainName:
+    Type: 'AWS::ApiGateway::DomainName'
+    Properties:
+      DomainName: !Ref DomainName
+      RegionalCertificateArn: !Ref Certificate
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+  Mapping:
+    Type: 'AWS::ApiGateway::BasePathMapping'
+    Properties:
+      DomainName: !Ref CustomDomainName
+      RestApiId: !Ref MyAppRestApi
+      Stage: !Ref StageName
+    DependsOn:
+      - CustomDomainName
+      - MyAppRestApiStage
+
+  APIDNS:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneName: !Sub
+          - ${Domain}.
+          - Domain: !Ref RDomainName
+      RecordSets:
+        - Name: !Sub
+            - ${Domain}
+            - Domain: !Ref DomainName
+          Type: A
+          AliasTarget:
+            DNSName: !GetAtt CustomDomainName.RegionalDomainName
+            HostedZoneId: !GetAtt CustomDomainName.RegionalHostedZoneId
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
   # Find out more about other implicit resources you can reference within SAM
   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
-  MyAppApi:
-    Description: "API Gateway endpoint URL for Prod stage for MyApp function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/api/"
+  #MyAppApi:
+  #  Description: "API Gateway endpoint URL for Prod stage for MyApp function"
+ #   Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/dev/api/"
   MyAppFunction:
     Description: "MyApp Lambda Function ARN"
     Value: !GetAtt MyAppFunction.Arn

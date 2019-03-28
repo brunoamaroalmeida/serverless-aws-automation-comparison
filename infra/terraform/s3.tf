@@ -41,3 +41,7 @@ resource "aws_route53_record" "default" {
   ttl     = "300"
   records = ["${aws_s3_bucket.website_bucket.website_endpoint}"]
 }
+
+output "s3_website_url" {
+  value = "${aws_s3_bucket.website_bucket.website_endpoint}"
+}
