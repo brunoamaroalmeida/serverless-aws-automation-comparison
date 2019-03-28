@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Results</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script type="text/javascript" src="https://unpkg.com/amazon-quicksight-embedding-sdk@1.0.1/dist/quicksight-embedding-js-sdk.min.js"></script>
+    <script type="text/javascript">
+    var gatewayApiUrl = "https://qynyg9q1o2.execute-api.eu-west-1.amazonaws.com/prod/getDashboardEmbedURL?"; // update with RootUrl found in Step 2
+    $(document).ready(function () {
+        var username = 'guest';
+        var password = 'Guest#123';
+        var dashboardId = 'caab900e-a08c-4834-853c-affdb48dcec9';
+        embedUrl();
+
+        function getParameterValues(param) {
+            var url = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+            for (var i = 0; i < url.length; i++) {
+                var urlparam = url[i].split('=');
+                if (urlparam[0].toLowerCase() === param) {
+                    return urlparam[1];
+                }
+            }
+        }
+        function embedUrl() {
+            var parameters = {
+                username: username,
+                password: password,
+                dashboardId: dashboardId
+            }
+
+            var queryString = $.param(parameters);
+            gatewayApiUrl = gatewayApiUrl + queryString;
+            $.ajax({
+                type: "GET",
+                url: gatewayApiUrl,
+                contentType: "application/json",
+                crossDomain: true,
+                success: function(data, status) {
+                    console.log(data);
+                    data.EmbedUrl=data.EmbedUrl.replace('%3D%3D', '');
+                    console.log(data.EmbedUrl);
+                    embedDashboard(data.EmbedUrl);
+                }
+            })
+        }
+
+        function onVisualLoaded() {
+            var div = document.getElementById("loadedContainer");
+            div.innerHTML = "Hey! I am fully loaded";
+        }
+
+        function onError() {
+            var div = document.getElementById("errorContainer");
+            div.innerHTML = "your seesion has expired";
+        }
+
+        function embedDashboard(embedUrl) {
+            var containerDiv = document.getElementById("dashboardContainer");
+            containerDiv.innerHTML = "";
+            var params = {
+                url: embedUrl,
+                container: containerDiv,
+                height: "900px"
+            };
+            var dashboard = QuickSightEmbedding.embedDashboard(params);
+            dashboard.on('error', onError);
+            dashboard.on('load', onVisualLoaded);
+        }
+    });
+    </script>
+</head>
+<body>
+    <div id="dashboardContainer">Patience is a virtue... Hold on</div>
+</body>
+</html>

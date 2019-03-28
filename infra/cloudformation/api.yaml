@@ -93,6 +93,7 @@ Resources:
       ResourceId: !Ref ApiResource
       HttpMethod: POST
       AuthorizationType: NONE
+      ApiKeyRequired: true
       Integration:
         Type: AWS_PROXY
         IntegrationHttpMethod: POST
@@ -162,9 +163,74 @@ Resources:
           method.response.header.Access-Control-Allow-Headers: false
           method.response.header.Access-Control-Allow-Methods: false
           method.response.header.Access-Control-Allow-Origin: false
-####
-#  CustomDomainName:
-#    Type: 'AWS::ApiGateway::DomainName'
-#    Properties:
-#      DomainName: !Ref DomainName
-#      RegionalCertificateArn: !Ref Certificate
+
+  ApiKey:
+    Type: AWS::ApiGateway::ApiKey
+    DependsOn:
+      - "ApiDeployment"
+      - "ApiStage"
+    Properties:
+      Name: "ApiKey"
+      Description: "CloudFormation API Key V1"
+      Enabled: "true"
+      Value: "thisismyapikeythisismyapikeythisismyapikey"
+      StageKeys:
+        - RestApiId: !Ref Api
+          StageName: !Ref StageName
+
+  ApiUsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    Properties:
+      ApiStages:
+      - ApiId: !Ref Api
+        Stage: !Ref StageName
+      Description: API Usage plan
+      Quota:
+        Limit: 10000
+        Period: DAY
+      Throttle:
+        BurstLimit: 500
+        RateLimit: 1000
+      UsagePlanName: process-request-usage-plan
+
+  ApiUsagePlanKey:
+    Type: AWS::ApiGateway::UsagePlanKey
+    Properties :
+      KeyId: !Ref ApiKey
+      KeyType: API_KEY
+      UsagePlanId: !Ref ApiUsagePlan
+
+  CustomDomainName:
+    Type: 'AWS::ApiGateway::DomainName'
+    Properties:
+      DomainName: !Ref DomainName
+      RegionalCertificateArn: !Ref Certificate
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+  Mapping:
+    Type: 'AWS::ApiGateway::BasePathMapping'
+    Properties:
+      DomainName: !Ref CustomDomainName
+      RestApiId: !Ref Api
+      Stage: !Ref StageName
+    DependsOn:
+      - ApiDeployment
+      - CustomDomainName
+      - ApiStage
+
+
+  APIDNS:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneName: !Sub
+          - ${Domain}.
+          - Domain: !Ref RDomainName
+      RecordSets:
+        - Name: !Sub
+            - ${Domain}
+            - Domain: !Ref DomainName
+          Type: A
+          AliasTarget:
+            DNSName: !GetAtt CustomDomainName.RegionalDomainName
+            HostedZoneId: !GetAtt CustomDomainName.RegionalHostedZoneId

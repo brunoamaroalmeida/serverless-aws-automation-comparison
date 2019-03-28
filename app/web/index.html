@@ -1,53 +1,54 @@
 <!DOCTYPE html>
 <html>
-<head>
-<meta charset="UTF-8">
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.4/css/bulma.min.css">
-</head>
-<script type="text/javascript">
-$(document).ready(function() {
+  <head>
+    <meta charset="UTF-8">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.4/css/bulma.min.css">
+    <script type="text/javascript">
+    $(document).ready(function() {
+      function submit(option) {
+        console.info("Submitting");
+        submit_msg="<br /> <b>Thanks!</b><br />"
+        $.ajax({
+          url: 'https://api.devopssquad.com/api/',
+          type: 'POST',
+          crossDomain: true,
+          data: option,
+          headers: {
+              "X-Api-Key": 'thisismyapikeythisismyapikeythisismyapikey'
+          },
+          dataType: 'json',
+          contentType: "application/json",
+          success: function (data) {
+              console.info(data);
+          }
+        });
+      };
 
-function submit(option) {
-  console.info("Submitting");
-  submit_msg="<br /> <b>Thanks!</b><br />"
-  $.ajax({
-    url: 'https://api.devopssquad.com/api/',
-    type: 'POST',
-    crossDomain: true,
-    data: option,
-    headers: {
-        "X-Api-Key": 'thisismyapikeythisismyapikeythisismyapikey'
-    },
-    dataType: 'json',
-    contentType: "application/json",
-    success: function (data) {
-        console.info(data);
-    }
-  });
-};
+      $('#submitA').on("click",function() {
+        submit("{\"option\":\"remain\"}");
+        $("#result").html(submit_msg);
+      });
 
-$('#submitA').on("click",function() {
-  submit("{\"option\":\"remain\"}");
-  $("#result").html(submit_msg);
-});
+      $('#submitB').on("click",function() {
+        submit("{\"option\":\"leave\"}");
+        $("#result").html(submit_msg);
+      });
 
-$('#submitB').on("click",function() {
-  submit("{\"option\":\"leave\"}");
-  $("#result").html(submit_msg);
-});
+    });
 
-});
-
-</script>
-<body align=center>
-<img src="anim.gif" alt="Animation" width="700px">
-<br /><br />
-<p>Choose your option</p>
-<br />
-<input type="submit" value="Remain" class="button" id="submitA"/>
-<input type="submit" value="Leave" class="button" id="submitB"/>
-
-<div id="result"></div>
-</body>
+    </script>
+  </head>
+  <body align=center>
+    <img src="anim.gif" alt="Animation" width="700px">
+    <br />
+    <br /><p>Choose your option</p><br />
+    <input type="submit" value="Remain" class="button" id="submitA"/>
+    <input type="submit" value="Leave" class="button" id="submitB"/>
+    <div id="result"></div>
+    <div>
+      <br /><br />
+      <br /><a href="https://d2mv3gppigwyir.cloudfront.net/result.html" target="_blank">Check out the Results</a>
+    </div>
+  </body>
 </html>

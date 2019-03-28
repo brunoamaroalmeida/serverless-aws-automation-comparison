@@ -13,7 +13,6 @@ def lambda_handler(event, context):
     with open(file, 'w') as outfile:
         json.dump(message, outfile)
 
-
     # Save the file in S3
     s3 = boto3.client('s3')
     try:
@@ -21,7 +20,6 @@ def lambda_handler(event, context):
     except Exception as e:
         print(e)
         raise e
-
 
     return {
         'statusCode': 200,

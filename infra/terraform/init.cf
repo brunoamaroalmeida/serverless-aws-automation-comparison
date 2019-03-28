@@ -3,7 +3,7 @@ provider "aws" {
   profile = "${var.aws_profile}"
 }
 
-# aws --region eu-west-1 s3 mb s3://jenkins-aws-fargate-pipeline
+# aws --region eu-west-1 s3 mb s3://serverless-aws-automation-comparison
 terraform {
   backend "s3" {
     bucket = "serverless-aws-automation-comparison"
