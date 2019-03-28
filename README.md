@@ -1,6 +1,12 @@
 # serverless-aws-automation-comparison
 A Comparison between different deployment automation tools for an AWS Serverless project
 
+
+## Architecture
+
+![Alt text](Architecture_Serverless_App.png?raw=true "Architecture")
+
+
 ## Athena (Optional)
 
 Create a table based on the S3 Result Location
