@@ -1,8 +1,8 @@
-# serverless-aws-automation-comparison
+# Serverless AWS Automation Comparison
 
 A practical comparison between different deployment automation tools for an AWS Serverless project.
 
-This project is meant to be used as reference for learning purposes only. It was presented in the [AWS Community Summit UK 2019](https://comsum.co.uk/comsum-manchester/) by [Bruno Amaro Almeida](https://www.brunoamaro.com).
+This project is meant to be used as reference for learning purposes only. It was presented during the [AWS Community Summit UK 2019](https://comsum.co.uk/comsum-manchester/) by [Bruno Amaro Almeida](https://www.brunoamaro.com).
 
 Currently supported:
 
@@ -26,12 +26,14 @@ In order to try out each deployment methods, please make sure you have the follo
 
 To make a comparison we need an example application to compare with. Our example serverless app is
 a static website (in S3) that allows the visitor to select an option.
+
 ![Website](docs/website.png?raw=true "Website")
 
 
 There is an API that receives the option the user submitted (API Gateway) and processes it (Lambda) by storing the result in persistent storage (S3).
 
 We allow the Developer to do Analytics over the results by using a combination of Athena with QuickSight.
+
 ![Athena+QuickSight](docs/athena_quicksight.png?raw=true "Athena+QuickSight")
 
 
@@ -77,7 +79,7 @@ cd ../../
 ```
 terraform graph | dot -Tsvg > graph.svg
 ```
-![Terraform Graph](docs/terraform_graph.svg?raw=true "Terraform Graph")
+![Terraform Graph](docs/terraform_graph.png?raw=true "Terraform Graph")
 
 
 ### Infrastructure & App Cleanup
@@ -115,7 +117,7 @@ You can create a QuickSight dashboard using Athena as source. Simply drag and dr
 
 ## Embebbed QuickSight (Optional x2)
 
-If you want to share your QuickSight dashboard to the public, please take a look at the file app/web/result.html and follow the instructions in this example: [https://github.com/aws-samples/amazon-quicksight-embedding-sample]
+If you want to share your QuickSight dashboard to the public, please take a look at the file app/web/result.html and follow the instructions in this example: https://github.com/aws-samples/amazon-quicksight-embedding-sample
 
 To confirm the Cognito user, you can use commands similar to the ones below (adapt to your values):
 
@@ -132,7 +134,9 @@ This work was developed by [Bruno Amaro Almeida](https://www.brunoamaro.com).
 
 Projects that were used and help during this comparison:
 
-[https://github.com/ringods/terraform-website-s3-cloudfront-route53/]
+https://github.com/ringods/terraform-website-s3-cloudfront-route53/
+
+https://github.com/aws-samples/amazon-quicksight-embedding-sample
 
 
 
