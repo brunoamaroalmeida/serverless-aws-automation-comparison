@@ -111,12 +111,14 @@ resource "aws_lambda_permission" "apigw_lambda" {
 }
 
 resource "aws_lambda_function" "lambda" {
-  filename         = "../../app/lambda/process_request.zip"
+  # filename         = "../../app/lambda/process_request.zip"
+  s3_bucket        = "serverless-aws-automation-comparison"
+  s3_key           = "process_request.zip"
   function_name    = "process_request"
   role             = "${aws_iam_role.role.arn}"
   handler          = "lambda_function.lambda_handler"
   runtime          = "python3.7"
-  source_code_hash = "${base64sha256(file("../../app/lambda/process_request.zip"))}"
+  # source_code_hash = "${base64sha256(file("../../app/lambda/process_request.zip"))}"
 }
 
 # IAM

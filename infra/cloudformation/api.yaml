@@ -219,7 +219,6 @@ Resources:
       - CustomDomainName
       - ApiStage
 
-
   APIDNS:
     Type: AWS::Route53::RecordSetGroup
     Properties:

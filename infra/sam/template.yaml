@@ -1,10 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-
 Transform: AWS::Serverless-2016-10-31
-Description: >
-  MyApp
-  SAM Template for MyApp
-
 Parameters:
   RDomainName:
     Description: Root domain zone
@@ -99,8 +94,6 @@ Resources:
                 name: "x-api-key"
                 in: "header"
 
-
-
   MyAppFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
@@ -134,7 +127,7 @@ Resources:
           Properties:
             Bucket: !Ref ResultStorageBucket
             Events: s3:ObjectCreated:*
-
+#######
   ResultStorageBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -213,14 +206,7 @@ Resources:
           AliasTarget:
             DNSName: !GetAtt CustomDomainName.RegionalDomainName
             HostedZoneId: !GetAtt CustomDomainName.RegionalHostedZoneId
-
 Outputs:
-  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
-  # Find out more about other implicit resources you can reference within SAM
-  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
-  #MyAppApi:
-  #  Description: "API Gateway endpoint URL for Prod stage for MyApp function"
- #   Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/dev/api/"
   MyAppFunction:
     Description: "MyApp Lambda Function ARN"
     Value: !GetAtt MyAppFunction.Arn
