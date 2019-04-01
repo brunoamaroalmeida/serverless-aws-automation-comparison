@@ -1,0 +1,118 @@
+service: api
+
+provider:
+  name: aws
+  runtime: python3.7
+  stage: dev
+  region: eu-west-1
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "s3:Put*"
+      Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ResultsBucket" }, "/*" ] ]  }
+  endpointType: REGIONAL
+  apiKeys:
+    - myapikey
+  usagePlan:
+    quota:
+      limit: 10000
+      offset: 0
+      period: DAY
+    throttle:
+      burstLimit: 500
+      rateLimit: 1000
+
+plugins:
+  - serverless-domain-manager
+  - serverless-cf-vars
+
+custom:
+  customDomain:
+    domainName: api.devopssquad.com
+    #basePath: /
+    stage: ${self:provider.stage}
+    createRoute53Record: true
+
+package:
+  include:
+    - '../../app/lambda/process_request/**'
+  exclude:
+    - 'package.json'
+    - 'package-lock.json'
+
+functions:
+  process_request:
+    handler: app/lambda/process_request/lambda_function.lambda_handler
+    events:
+      - http:
+          path: api
+          method: post
+          cors: true
+          private: true
+
+resources:
+  Parameters:
+    RDomainName:
+      Description: Root domain zone
+      Type: String
+      Default: devopssquad.com.
+    DomainName:
+      Description: Domain name for your website (example.com)
+      Type: String
+      Default: hello.devopssquad.com
+    ResultsBucket:
+      Description: S3 Bucket to store the Results
+      Type: String
+      Default: devopssquad-results
+  Resources:
+    ResultStorageBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: !Ref ResultsBucket
+    WWWBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: !Ref DomainName
+        AccessControl: PublicRead
+        WebsiteConfiguration:
+          IndexDocument: index.html
+          ErrorDocument: 404.html
+    WWWBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket: !Ref DomainName
+        PolicyDocument:
+          Statement:
+            -
+              Action:
+                - "s3:GetObject"
+              Effect: "Allow"
+              Resource:
+                Fn::Join:
+                  - ""
+                  -
+                    - "arn:aws:s3:::"
+                    -
+                      Ref: "DomainName"
+                    - "/*"
+              Principal: "*"
+
+    WWWDNS:
+      Type: AWS::Route53::RecordSetGroup
+      Properties:
+        HostedZoneName: !Ref RDomainName
+        Comment: Zone apex alias.
+        RecordSets:
+        -
+          Name: !Ref DomainName
+          Type: CNAME
+          TTL: 900
+          ResourceRecords:
+            - Fn::Sub:
+              - "#{Domain}.s3-website-eu-west-1.amazonaws.com"
+              - Domain: !Ref DomainName
+
+  Outputs:
+    WebsiteURL:
+      Value: !GetAtt WWWBucket.WebsiteURL
+      Description: URL for website hosted on S3

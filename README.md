@@ -9,6 +9,7 @@ Currently supported:
 * Cloudformation
 * SAM
 * Terraform
+* Serverless Framework
 
 # Pre-requisites
 
@@ -18,6 +19,7 @@ In order to try out each deployment methods, please make sure you have the follo
 * aws client tool installed and configured to your account
 * terraform client tool installed
 * sam client tool installed
+* serverless framework installed
 * A Public Domain in AWS Route 53
 * A Regional SSL Certificate in AWS Certificate Manager
 
@@ -48,7 +50,7 @@ We allow the Developer to do Analytics over the results by using a combination o
 #### Requirements
 aws cli installed and configured
 
-> Please remember to adapt the S3 bucket names and Route 53 custom domains to your own enviroment.
+> Please remember to adapt the S3 bucket names and Route 53 custom domains to your own environment.
 
 
 Deploy infrastructure
@@ -83,7 +85,7 @@ aws cloudformation delete-stack --stack-name api
 #### Requirements
 aws cli and sam installed and configured
 
-> Please remember to adapt the S3 bucket names and Route 53 custom domains to your own enviroment.
+> Please remember to adapt the S3 bucket names and Route 53 custom domains to your own environment.
 
 Try the API locally (optional)
 ```
@@ -124,7 +126,7 @@ aws cloudformation delete-stack --stack-name api
 #### Requirements
 aws cli and terraform installed and configured
 
-> Please remember to adapt the S3 bucket names and Route 53 custom domains to your own enviroment.
+> Please remember to adapt the S3 bucket names and Route 53 custom domains to your own environment.
 
 Set the enviroment settings
 ```
@@ -168,6 +170,46 @@ cd infra/terraform
 terraform destroy
 ```
 
+## Serverless Framework
+### Infrastructure & App Deployment
+#### Requirements
+aws cli and serverless framework installed
+
+Install additional plugins:
+
+```
+npm install serverless-domain-manager --save-dev
+npm install serverless-cf-vars  --save-dev
+```
+
+> Please remember to adapt the S3 bucket names and Route 53 custom domains to your own environment.
+
+Deploy infrastructure
+```
+cd infra/serverlessframework
+sls create_domain
+sls deploy -v
+```
+
+Deploy apps (website)
+> Change the API Key in index.html to the value the sls deploy output provided.
+> I didn't found an easy way to set a pre-defined value to the api key.
+```
+#
+cd ../../
+./deploy_apps.sh
+```
+
+### Infrastructure & App Cleanup
+
+This will terminate any resources that were created
+```
+cd ../../
+./empty-buckets.sh
+cd infra/serverlessframework
+sls remove
+sls delete_domain
+```
 
 
 ## Athena (Optional)
@@ -216,11 +258,10 @@ https://github.com/ringods/terraform-website-s3-cloudfront-route53/
 
 https://github.com/aws-samples/amazon-quicksight-embedding-sample
 
-
+https://serverless.com/blog/serverless-api-gateway-domain/
 
 # TODO
 
-* Add Serverless Framework to the comparison
 * Enable SSL in the static website by using CloudFront
 * Athena templates
 * Quicksight templates
