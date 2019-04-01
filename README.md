@@ -42,6 +42,82 @@ We allow the Developer to do Analytics over the results by using a combination o
 ![Architecture](docs/Architecture_Serverless_App.png?raw=true "Architecture")
 
 
+## SAM
+
+### Infrastructure & App Deployment
+#### Requirements
+aws cli installed and configured
+
+> Please remember to adapt the S3 bucket names and Route 53 custom domains to your own enviroment.
+
+
+Deploy infrastructure
+```
+cd infra/cloudformation
+aws cloudformation create-stack --stack-name api --template-body file://api.yaml  --capabilities CAPABILITY_IAM
+
+aws cloudformation create-stack --stack-name website --template-body file://s3.yaml   --capabilities CAPABILITY_IAM
+```
+
+Deploy apps (lambda + website)
+```
+cd ../../
+./deploy_apps.sh
+```
+
+### Infrastructure & App Cleanup
+
+This will terminate any resources that were created
+```
+cd ../../
+./empty-buckets.sh
+cd infra/cloudformation
+aws cloudformation delete-stack --stack-name website
+aws cloudformation delete-stack --stack-name api
+
+```
+
+## SAM
+
+### Infrastructure & App Deployment
+#### Requirements
+aws cli and sam installed and configured
+
+> Please remember to adapt the S3 bucket names and Route 53 custom domains to your own enviroment.
+
+Try the API locally (optional)
+```
+cd infra/sam
+sam local start-api
+```
+
+Deploy infrastructure
+```
+cd infra/sam
+sam package     --output-template-file packaged.yaml     --s3-bucket serverless-aws-automation-comparison
+aws cloudformation deploy --template-file ./packaged.yaml --stack-name api  --capabilities CAPABILITY_IAM
+
+aws cloudformation create-stack --stack-name website --template-body file://s3.yaml   --capabilities CAPABILITY_IAM
+```
+
+Deploy apps (lambda + website)
+```
+cd ../../
+./deploy_apps.sh
+```
+
+### Infrastructure & App Cleanup
+
+This will terminate any resources that were created
+```
+cd ../../
+./empty-buckets.sh
+cd infra/sam
+aws cloudformation delete-stack --stack-name website
+aws cloudformation delete-stack --stack-name api
+
+```
+
 ## Terraform
 
 ### Infrastructure & App Deployment
@@ -86,6 +162,8 @@ terraform graph | dot -Tsvg > graph.svg
 
 This will terminate any resources that were created
 ```
+cd ../../
+./empty-buckets.sh
 cd infra/terraform
 terraform destroy
 ```
