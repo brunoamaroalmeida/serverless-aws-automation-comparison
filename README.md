@@ -3,6 +3,7 @@
 A practical comparison between different deployment automation tools for an AWS Serverless project.
 
 This project is meant to be used as reference for learning purposes only. It was presented during the [AWS Community Summit UK 2019](https://comsum.co.uk/comsum-manchester/) by [Bruno Amaro Almeida](https://www.brunoamaro.com).
+Slide deck is available [here:](https://speaking.brunoamaro.com/yUeFUQ/deployment-automation-for-an-aws-serverless-project-sam-vs-cloudformation-vs-terraform)
 
 Currently supported:
 
