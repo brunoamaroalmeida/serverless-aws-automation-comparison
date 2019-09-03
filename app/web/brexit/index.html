@@ -26,21 +26,13 @@
       };
 
       $('#submitA').on("click",function() {
-        submit("{\"favorite\":\"bmw\"}");
+        submit("{\"option\":\"remain\"}");
         $("#result").html(submit_msg);
-        $("#options").html("");
       });
 
       $('#submitB').on("click",function() {
-        submit("{\"favorite\":\"mercedes-benz\"}");
+        submit("{\"option\":\"leave\"}");
         $("#result").html(submit_msg);
-        $("#options").html("");
-      });
-
-      $('#submitC').on("click",function() {
-        submit("{\"favorite\":\"audi\"}");
-        $("#result").html(submit_msg);
-        $("#options").html("");
       });
 
     });
@@ -48,16 +40,11 @@
     </script>
   </head>
   <body align=center>
-    <img src="cars.jpg" alt="Cars" width="700px">
-    <br/>
-    <small>Photo by Alex Suprun on Unsplash</small>
+    <img src="anim.gif" alt="Animation" width="700px">
     <br />
-    <div id="options">
-    <br /><p>Choose your favorite</p><br />
-    <input type="submit" value="BMW" class="button" id="submitA"/>
-    <input type="submit" value="Mercedes-Benz" class="button" id="submitB"/>
-    <input type="submit" value="Audi" class="button" id="submitC"/>
-    </div>
+    <br /><p>Choose your option</p><br />
+    <input type="submit" value="Remain" class="button" id="submitA"/>
+    <input type="submit" value="Leave" class="button" id="submitB"/>
     <div id="result"></div>
     <div>
       <br /><br />
