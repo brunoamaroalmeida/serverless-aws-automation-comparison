@@ -26,6 +26,7 @@ resource "aws_s3_bucket" "results_bucket" {
   bucket   = "${var.results_bucket_name}"
 }
 
+/*
 data "aws_route53_zone" "default" {
   name    = "${var.parent_zone_name}"
 }
@@ -38,6 +39,7 @@ resource "aws_route53_record" "default" {
   records = ["${aws_s3_bucket.website_bucket.website_endpoint}"]
 }
 
+*/
 output "s3_website_url" {
   value = "${aws_s3_bucket.website_bucket.website_endpoint}"
 }

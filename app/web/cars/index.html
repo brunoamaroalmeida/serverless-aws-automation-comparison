@@ -10,7 +10,7 @@
         console.info("Submitting");
         submit_msg="<br /> <b>Thanks!</b><br />"
         $.ajax({
-          url: 'https://jnrxte5gg1.execute-api.eu-west-1.amazonaws.com/v1',
+          url: 'https://api.devopssquad.com/api/',
           type: 'POST',
           crossDomain: true,
           data: option,
@@ -26,19 +26,19 @@
       };
 
       $('#submitA').on("click",function() {
-        submit("{\"favorite\":\"AWS\"}");
+        submit("{\"favorite\":\"bmw\"}");
         $("#result").html(submit_msg);
         $("#options").html("");
       });
 
       $('#submitB').on("click",function() {
-        submit("{\"favorite\":\"GoogleCloud\"}");
+        submit("{\"favorite\":\"mercedes-benz\"}");
         $("#result").html(submit_msg);
         $("#options").html("");
       });
 
       $('#submitC').on("click",function() {
-        submit("{\"favorite\":\"MicrosoftAzure\"}");
+        submit("{\"favorite\":\"audi\"}");
         $("#result").html(submit_msg);
         $("#options").html("");
       });
@@ -48,15 +48,15 @@
     </script>
   </head>
   <body align=center>
-    <img src="cloud.gif" alt="Cloud">
+    <img src="cars.jpg" alt="Cars" width="700px">
     <br/>
-    <small>There is no cloud. It's just someone else's computer</small>
+    <small>Photo by Alex Suprun on Unsplash</small>
     <br />
     <div id="options">
     <br /><p>Choose your favorite</p><br />
-    <input type="submit" value="AWS" class="button" id="submitA"/>
-    <input type="submit" value="Google Cloud" class="button" id="submitB"/>
-    <input type="submit" value="Microsoft Azure" class="button" id="submitC"/>
+    <input type="submit" value="BMW" class="button" id="submitA"/>
+    <input type="submit" value="Mercedes-Benz" class="button" id="submitB"/>
+    <input type="submit" value="Audi" class="button" id="submitC"/>
     </div>
     <div id="result"></div>
     <div>

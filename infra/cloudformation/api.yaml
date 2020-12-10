@@ -192,6 +192,10 @@ Resources:
         BurstLimit: 500
         RateLimit: 1000
       UsagePlanName: process-request-usage-plan
+    DependsOn:
+      - ApiDeployment
+      - CustomDomainName
+      - ApiStage
 
   ApiUsagePlanKey:
     Type: AWS::ApiGateway::UsagePlanKey
